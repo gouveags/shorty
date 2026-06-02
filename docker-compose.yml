@@ -1,0 +1,39 @@
+services:
+  app:
+    build: .
+    environment:
+      BIND_ADDRESS: 0.0.0.0:8080
+      PUBLIC_BASE_URL: http://localhost:8080
+      DATABASE_URL: postgres://shorty:shorty@postgres:5432/shorty
+      REDIS_URL: redis://redis:6379
+      CODE_LENGTH: 7
+      CACHE_TTL_SECONDS: 86400
+      ACCESS_FLUSH_INTERVAL_SECONDS: 1
+      RUST_LOG: shorty=debug,tower_http=debug
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: shorty
+      POSTGRES_PASSWORD: shorty
+      POSTGRES_DB: shorty
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U shorty -d shorty"]
+      interval: 2s
+      timeout: 2s
+      retries: 20
+
+  redis:
+    image: redis:8
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 2s
+      retries: 20
